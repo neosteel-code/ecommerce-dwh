@@ -4,6 +4,9 @@
 # Данные: датасет не коммитим, но папку сохраняем
 data/*
 !data/.gitkeep
+!data/raw/
+data/raw/*
+!data/raw/marketing_spend.csv
 
 # Python
 __pycache__/
