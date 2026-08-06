@@ -1,5 +1,10 @@
+
 pandas==3.0.3
 psycopg[binary]==3.3.4
 python-dotenv==1.2.2
 requests==2.34.2
 SQLAlchemy==2.0.51
+
+# dev tools
+mypy==2.3.0
+pandas-stubs==3.0.5.260730
