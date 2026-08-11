@@ -18,13 +18,12 @@ def get_connection():
 
 
 if __name__ == "__main__":
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT version()")
-            print(cur.fetchone()[0])
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT version()")
+        print(cur.fetchone()[0])
 
-            cur.execute(
-                "SELECT nspname FROM pg_namespace "
-                "WHERE nspname IN ('raw','stg','core','mart') ORDER BY 1"
-            )
-            print("schemas:", [row[0] for row in cur.fetchall()])
+        cur.execute(
+            "SELECT nspname FROM pg_namespace "
+            "WHERE nspname IN ('raw','stg','core','mart') ORDER BY 1"
+        )
+        print("schemas:", [row[0] for row in cur.fetchall()])

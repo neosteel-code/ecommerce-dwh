@@ -1,5 +1,4 @@
-﻿from fileinput import filename
-import sys
+﻿import sys
 from pathlib import Path
 
 import pandas as pd
@@ -25,23 +24,21 @@ def load_csv(path: Path, table: str) -> int:
     cols_list = ", ".join(f'"{c}"' for c in columns)
 
     try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(f"DROP TABLE IF EXISTS raw.{table}")
-                cur.execute(
-                    f"CREATE TABLE raw.{table} ({cols_ddl}, "
-                    f"_loaded_at timestamptz NOT NULL DEFAULT now(), "
-                    f"_source text NOT NULL DEFAULT '{path.name}')"
-                )
+        with get_connection() as conn, conn.cursor() as cur:
+            cur.execute(f"DROP TABLE IF EXISTS raw.{table}")
+            cur.execute(
+                f"CREATE TABLE raw.{table} ({cols_ddl}, "
+                f"_loaded_at timestamptz NOT NULL DEFAULT now(), "
+                f"_source text NOT NULL DEFAULT '{path.name}')"
+            )
 
-                sql = f"COPY raw.{table} ({cols_list}) FROM STDIN WITH (FORMAT csv, HEADER true)"
-                with open(path, "r", encoding="utf-8") as f:
-                    with cur.copy(sql) as copy:
-                        while chunk := f.read(65536):
-                            copy.write(chunk)
+            sql = f"COPY raw.{table} ({cols_list}) FROM STDIN WITH (FORMAT csv, HEADER true)"
+            with open(path, "r", encoding="utf-8") as f, cur.copy(sql) as copy:
+                while chunk := f.read(65536):
+                    copy.write(chunk)
 
-                cur.execute(f"SELECT count(*) FROM raw.{table}")
-                rows = cur.fetchone()[0]
+            cur.execute(f"SELECT count(*) FROM raw.{table}")
+            rows = cur.fetchone()[0]
 
         log.info(f"Загружено {rows} строк в raw.{table}")
         return rows
@@ -58,7 +55,6 @@ def filename_to_table(filename: str) -> str:
     marketing_spend.csv -> marketing_spend
     """
     return filename.replace(".csv", "").replace("olist_", "").replace("_dataset", "")
-   
 
 
 if __name__ == "__main__":
