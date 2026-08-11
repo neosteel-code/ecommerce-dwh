@@ -1,4 +1,5 @@
-﻿import sys
+﻿from fileinput import filename
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -50,7 +51,17 @@ def load_csv(path: Path, table: str) -> int:
         raise
 
 
+def filename_to_table(filename: str) -> str:
+    """Превращает имя CSV-файла в имя таблицы.
+
+    olist_orders_dataset.csv -> orders
+    marketing_spend.csv -> marketing_spend
+    """
+    return filename.replace(".csv", "").replace("olist_", "").replace("_dataset", "")
+   
+
+
 if __name__ == "__main__":
     filename = sys.argv[1]
-    table = filename.replace(".csv", "").replace("olist_", "").replace("_dataset", "")
+    table = filename_to_table(filename)
     load_csv(RAW_DIR / filename, table)
