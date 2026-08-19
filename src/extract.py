@@ -3,6 +3,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.audit import (
+    check_row_count_anomaly,
+    finish_run_failed,
+    finish_run_success,
+    start_run,
+)
 from src.db import get_connection
 from src.logger import get_logger
 
@@ -13,17 +19,18 @@ RAW_DIR = Path("data/raw")
 
 def load_csv(path: Path, table: str) -> int:
     """Грузит CSV в raw-таблицу через COPY. Все колонки text."""
+    run_id = start_run(pipeline_name="extract_csv", source_file=path.name, target_table=f"raw.{table}")
+
     log.info(f"Начинаю загрузку {path.name} в raw.{table}")
 
-    if not path.exists():
-        log.error(f"Файл не найден: {path}")
-        raise FileNotFoundError(f"Файл не найден: {path}")
-
-    columns = pd.read_csv(path, nrows=0).columns.tolist()
-    cols_ddl = ", ".join(f'"{c}" text' for c in columns)
-    cols_list = ", ".join(f'"{c}"' for c in columns)
-
     try:
+        if not path.exists():
+            raise FileNotFoundError(f"Файл не найден: {path}")
+
+        columns = pd.read_csv(path, nrows=0).columns.tolist()
+        cols_ddl = ", ".join(f'"{c}" text' for c in columns)
+        cols_list = ", ".join(f'"{c}"' for c in columns)
+
         with get_connection() as conn, conn.cursor() as cur:
             cur.execute(f"DROP TABLE IF EXISTS raw.{table}")
             cur.execute(
@@ -41,10 +48,13 @@ def load_csv(path: Path, table: str) -> int:
             rows = cur.fetchone()[0]
 
         log.info(f"Загружено {rows} строк в raw.{table}")
+        check_row_count_anomaly(f"raw.{table}", rows)
+        finish_run_success(run_id, rows)
         return rows
 
-    except Exception:
+    except Exception as e:
         log.exception(f"Ошибка при загрузке {path.name} в raw.{table}")
+        finish_run_failed(run_id, str(e))
         raise
 
 
